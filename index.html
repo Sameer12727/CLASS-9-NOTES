@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Notes Hub</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
@@ -75,7 +75,7 @@ body.light .sidebar input,body.light .sidebar button,body.light .sidebar select{
       <input type="text" id="chapterName" placeholder="Chapter Name">
       <input type="text" id="chapterLink" placeholder="Notes Link (Drive)">
       <button id="addChapterBtn">Add Chapter</button>
-      <h3>Existing Chapters</h3>
+      <h3>Existing Books & Chapters</h3>
       <div id="chapterList"></div>
     </div>
   </div>
@@ -198,9 +198,12 @@ function updateSelectBook(){
 function displayChapters(){
   chapterList.innerHTML='';
   subjectsData.forEach((b,bi)=>{
+    const bookDiv=document.createElement('div');bookDiv.style.marginBottom='10px';
+    bookDiv.innerHTML=`<strong>${b.name}</strong> <button style="margin-left:5px;" onclick="deleteBook('${b.key}')">Delete Book</button>`;
+    chapterList.appendChild(bookDiv);
     b.chapters.forEach((ch,ci)=>{
-      const div=document.createElement('div');div.style.marginBottom='8px';
-      div.innerHTML=`${b.name} - ${ch.name} 
+      const div=document.createElement('div');div.style.marginLeft='15px';div.style.marginBottom='5px';
+      div.innerHTML=`${ch.name} 
         <button style="margin-left:5px;" onclick="editChapter('${b.key}','${ch.key}')">Edit</button>
         <button style="margin-left:5px;" onclick="deleteChapter('${b.key}','${ch.key}')">Delete</button>`;
       chapterList.appendChild(div);
@@ -221,6 +224,10 @@ function editChapter(bookKey,chKey){
 
 function deleteChapter(bookKey,chKey){
   if(confirm("Delete this chapter?")){db.ref(`subjects/${bookKey}/chapters/${chKey}`).remove();}
+}
+
+function deleteBook(bookKey){
+  if(confirm("Delete this entire book?")){db.ref(`subjects/${bookKey}`).remove();}
 }
 
 </script>
