@@ -8,12 +8,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
 body{background:#0d0d0d;color:#ffd700;transition:0.35s ease;overflow-x:hidden;}
-
-/* HEADER */
 header{padding:25px;text-align:center;background:#000;color:#ffd700;position:sticky;top:0;z-index:100;box-shadow:0 4px 15px rgba(255,215,0,0.2);}
 header h1{font-size:2.2rem;text-shadow:0 0 10px #ffd700;letter-spacing:1px;}
-
-/* THEME TOGGLE */
 .theme-toggle{position:absolute;top:20px;right:20px;background:#111;border:2px solid #ffd700;color:#ffd700;width:55px;height:55px;border-radius:50%;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;transition:0.4s ease;box-shadow:0 0 12px rgba(255,215,0,0.6);}
 .theme-toggle:hover{transform: scale(1.15);box-shadow:0 0 20px rgba(255,215,0,1);}
 .theme-toggle .sun,.theme-toggle .moon{position:absolute;transition:0.5s ease;}
@@ -24,8 +20,6 @@ body.light header{background:#fff;color:#000;}
 body.light .theme-toggle{background:#fff;border-color:#000;color:#000;}
 body.light .sun{opacity:0;transform:scale(0) rotate(180deg);}
 body.light .moon{opacity:1;transform:scale(1) rotate(0deg);}
-
-/* CONTAINER */
 .container{padding:30px;max-width:1200px;margin:auto;}
 .search-bar input{width:100%;padding:14px;margin-bottom:30px;border-radius:30px;border:none;background:#222;outline:none;color:#ffd700;font-size:1rem;box-shadow:0 0 10px rgba(255,215,0,0.3);}
 .search-bar input::placeholder{color:#ffd700aa;}
@@ -38,8 +32,6 @@ body.light .moon{opacity:1;transform:scale(1) rotate(0deg);}
 .chapter:hover{background:#333;transform:scale(1.03);box-shadow:0 0 12px #ffd700;}
 .notes-viewer{margin-top:35px;padding:25px;border:1px solid #444;border-radius:20px;min-height:500px;box-shadow:0 8px 25px rgba(255,215,0,0.2);}
 iframe{width:100%;height:500px;border:none;border-radius:15px;}
-
-/* SIDEBAR */
 .sidebar{position:fixed;top:0;left:-400px;width:350px;height:100%;background:#111;box-shadow:5px 0 25px rgba(255,215,0,0.3);transition:0.4s ease;z-index:200;display:flex;flex-direction:column;overflow-y:auto;padding:20px;}
 .sidebar.open{left:0;}
 .sidebar h2{color:#ffd700;margin-bottom:20px;text-align:center;}
@@ -48,19 +40,17 @@ iframe{width:100%;height:500px;border:none;border-radius:15px;}
 .sidebar button{background:#ffd700;color:#000;font-weight:bold;cursor:pointer;transition:0.3s;}
 .sidebar button:hover{background:#e6c200;}
 .sidebar h3{margin-top:15px;color:#ffd700;}
-
-/* SIDEBAR TOGGLE BUTTON */
 .sidebar-toggle{position:fixed;top:25px;left:25px;width:45px;height:35px;cursor:pointer;z-index:210;display:flex;flex-direction:column;justify-content:space-between;}
 .sidebar-toggle div{height:5px;background:#ffd700;border-radius:5px;transition:0.4s;}
-
-/* CONTACT ADMIN BUTTON */
 .contact-admin{position:fixed;bottom:20px;right:20px;background:#ffd700;color:#000;padding:12px 20px;border-radius:50px;box-shadow:0 5px 15px rgba(255,215,0,0.5);font-weight:bold;cursor:pointer;transition:0.3s;text-decoration:none;}
 .contact-admin:hover{background:#e6c200;}
 body.light .sidebar{background:#fff;color:#000;}
 body.light .sidebar input,body.light .sidebar button,body.light .sidebar select{color:#000;}
-
 @media(max-width:600px){.subject-card{padding:20px;}.chapter{padding:12px;}.contact-admin{padding:10px 16px;bottom:15px;right:15px;}.sidebar{width:90%;}}
 </style>
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -82,41 +72,49 @@ body.light .sidebar input,body.light .sidebar button,body.light .sidebar select{
       <h3>Add Book</h3>
       <input type="text" id="newBookName" placeholder="Book Name">
       <button id="addBookBtn">Add Book</button>
-      
       <h3>Add Chapter</h3>
       <select id="selectBook"></select>
       <input type="text" id="chapterName" placeholder="Chapter Name">
       <input type="text" id="chapterLink" placeholder="Notes Link (Drive)">
       <button id="addChapterBtn">Add Chapter</button>
-      
       <h3>Existing Chapters</h3>
       <div id="chapterList"></div>
     </div>
   </div>
 </div>
 
-<div class="sidebar-toggle" id="sidebarToggle">
-  <div></div><div></div><div></div>
-</div>
+<div class="sidebar-toggle" id="sidebarToggle"><div></div><div></div><div></div></div>
 
 <div class="container">
   <div class="search-bar">
     <input type="text" id="searchInput" placeholder="Search chapters...">
   </div>
   <div class="subjects" id="subjectsContainer"></div>
-  <div class="notes-viewer" id="notesViewer">
-    <p>Select a chapter to view notes here.</p>
-  </div>
+  <div class="notes-viewer" id="notesViewer"><p>Select a chapter to view notes here.</p></div>
 </div>
 
 <a href="https://www.tiktok.com/@sameer11284" target="_blank" class="contact-admin">Contact Admin</a>
 
 <script>
-let subjectsData=[]; // ZERO CHAPTERS INIT
+// ====== FIREBASE INIT ======
+const firebaseConfig = {
+  apiKey: "AIzaSyBP4OzYeTgOY5cKxgHWQbYOJoOPkrs0_D0",
+  authDomain: "sams-chat-415ce.firebaseapp.com",
+  databaseURL: "https://sams-chat-415ce-default-rtdb.firebaseio.com",
+  projectId: "sams-chat-415ce",
+  storageBucket: "sams-chat-415ce.firebasestorage.app",
+  messagingSenderId: "583183970312",
+  appId: "1:583183970312:web:d5a8278dddf5e12da0a1bd"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
+// ====== VARIABLES ======
+let subjectsData = []; // Will be fetched from Firebase
 const subjectsContainer = document.getElementById('subjectsContainer');
 const notesViewer = document.getElementById('notesViewer');
 
+// ====== BUILD SUBJECTS ======
 function buildSubjects(){
   subjectsContainer.innerHTML='';
   subjectsData.forEach((sub,i)=>{
@@ -127,9 +125,7 @@ function buildSubjects(){
       const chDiv=document.createElement('div');chDiv.className='chapter';chDiv.textContent=ch.name;
       chDiv.onclick=()=>{
         if(ch.link){notesViewer.innerHTML=`<iframe src="${ch.link}"></iframe>`;}
-        else{notesViewer.innerHTML=`<div style="color:#ffd700;font-size:1.2rem;text-align:center;margin-top:50px;">
-            🚧 COMING SOON! <br> For help, contact admin.
-        </div>`;}
+        else{notesViewer.innerHTML=`<div style="color:#ffd700;font-size:1.2rem;text-align:center;margin-top:50px;">🚧 COMING SOON! <br> For help, contact admin.</div>`;}
       };
       chaptersDiv.appendChild(chDiv);
       setTimeout(()=>{chDiv.style.opacity='1';chDiv.style.transform='translateX(0)';},j*120);
@@ -144,9 +140,25 @@ function buildSubjects(){
     setTimeout(()=>{card.style.opacity='1';card.style.transform='translateY(0)';},i*150);
   });
 }
-buildSubjects();
 
-/* SEARCH */
+// ====== FETCH FROM FIREBASE ======
+function fetchFirebaseData(){
+  db.ref('subjects').on('value',snapshot=>{
+    subjectsData=[];
+    snapshot.forEach(bookSnap=>{
+      const book=bookSnap.val();
+      const chapters=[];
+      if(book.chapters){
+        Object.keys(book.chapters).forEach(k=>{chapters.push(book.chapters[k]);});
+      }
+      subjectsData.push({name:book.name,chapters:chapters});
+    });
+    buildSubjects(); updateSelectBook(); displayChapters();
+  });
+}
+fetchFirebaseData();
+
+// ====== SEARCH ======
 document.getElementById('searchInput').addEventListener('input',e=>{
   const term=e.target.value.toLowerCase();
   subjectsContainer.querySelectorAll('.subject-card').forEach(card=>{
@@ -155,20 +167,19 @@ document.getElementById('searchInput').addEventListener('input',e=>{
   });
 });
 
-/* THEME */
+// ====== THEME ======
 const toggleBtn=document.getElementById("themeToggle");
-toggleBtn.onclick=()=>{document.body.classList.toggle("light");
-localStorage.setItem("theme",document.body.classList.contains("light")?"light":"dark");};
+toggleBtn.onclick=()=>{document.body.classList.toggle("light");localStorage.setItem("theme",document.body.classList.contains("light")?"light":"dark");};
 if(localStorage.getItem("theme")==="light"){document.body.classList.add("light");}
 
-/* SIDEBAR */
+// ====== SIDEBAR ======
 const sidebar=document.getElementById('sidebar');
 document.getElementById('sidebarToggle').onclick=()=>{sidebar.classList.toggle('open');};
 
-/* REQUEST */
+// ====== REQUEST NOTES ======
 document.getElementById('requestBtn').onclick=()=>{window.open("mailto:sameergamer442@gmail.com?subject=Request%20Any%20Notes");}
 
-/* ADMIN */
+// ====== ADMIN ======
 const adminKeyInput=document.getElementById('adminKey');
 const adminLoginBtn=document.getElementById('adminLoginBtn');
 const adminPanel=document.getElementById('adminPanel');
@@ -180,27 +191,37 @@ adminLoginBtn.onclick=()=>{
   else{alert('Invalid Admin Key');}
 };
 
-/* Add Book */
+// ADD BOOK
 document.getElementById('addBookBtn').onclick=()=>{
   const name=document.getElementById('newBookName').value.trim();
-  if(name){subjectsData.push({name:name,chapters:[]}); buildSubjects(); updateSelectBook(); displayChapters();}
+  if(name){
+    const newBookRef=db.ref('subjects').push();
+    newBookRef.set({name:name});
+    document.getElementById('newBookName').value='';
+  }
 };
 
-/* Add Chapter */
+// ADD CHAPTER
 document.getElementById('addChapterBtn').onclick=()=>{
   const bookIndex=selectBook.value;
   const chName=document.getElementById('chapterName').value.trim();
   const chLink=document.getElementById('chapterLink').value.trim();
-  if(chName){subjectsData[bookIndex].chapters.push({name:chName,link:chLink}); buildSubjects(); displayChapters();}
+  if(chName && subjectsData[bookIndex]){
+    const bookId=Object.keys(subjectsDataFirebase())[bookIndex];
+    const newChRef=db.ref(`subjects/${bookId}/chapters`).push();
+    newChRef.set({name:chName,link:chLink});
+    document.getElementById('chapterName').value='';
+    document.getElementById('chapterLink').value='';
+  }
 };
 
-/* Update Select */
+// ====== UPDATE SELECT ======
 function updateSelectBook(){
   selectBook.innerHTML='';
   subjectsData.forEach((b,i)=>{selectBook.innerHTML+=`<option value="${i}">${b.name}</option>`;});
 }
 
-/* Display Chapters for Admin */
+// ====== DISPLAY CHAPTERS ADMIN ======
 function displayChapters(){
   chapterList.innerHTML='';
   subjectsData.forEach((b,bi)=>{
@@ -215,20 +236,28 @@ function displayChapters(){
   });
 }
 
-/* Edit / Delete */
+// ====== EDIT / DELETE ======
 function editChapter(bi,ci){
   const newName=prompt("Chapter Name:",subjectsData[bi].chapters[ci].name);
   const newLink=prompt("Notes Link:",subjectsData[bi].chapters[ci].link);
   if(newName!==null){subjectsData[bi].chapters[ci].name=newName;}
   if(newLink!==null){subjectsData[bi].chapters[ci].link=newLink;}
-  buildSubjects(); displayChapters();
+  const bookId=Object.keys(subjectsDataFirebase())[bi];
+  const chKeys=Object.keys(subjectsDataFirebase()[bookId].chapters||{});
+  db.ref(`subjects/${bookId}/chapters/${chKeys[ci]}`).set({name:newName,link:newLink});
 }
 function deleteChapter(bi,ci){
-  if(confirm("Delete this chapter?")){subjectsData[bi].chapters.splice(ci,1); buildSubjects(); displayChapters();}
+  if(confirm("Delete this chapter?")){
+    const bookId=Object.keys(subjectsDataFirebase())[bi];
+    const chKeys=Object.keys(subjectsDataFirebase()[bookId].chapters||{});
+    db.ref(`subjects/${bookId}/chapters/${chKeys[ci]}`).remove();
+  }
 }
 
-updateSelectBook();
-displayChapters();
+// Helper to get raw Firebase data
+let subjectsDataCache={};
+function subjectsDataFirebase(){return subjectsDataCache;}
+db.ref('subjects').on('value',snapshot=>{subjectsDataCache=snapshot.val();});
 </script>
 </body>
 </html>
