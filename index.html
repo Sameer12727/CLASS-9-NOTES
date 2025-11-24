@@ -1,483 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Notes Hub</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif}
-  :root{
-    --gold:#ffd700; --dark:#0d0d0d; --panel:#111; --muted:#222;
-  }
-  body{background:var(--dark);color:var(--gold);transition:0.35s}
-  /* HEADER */
-  header{padding:25px;text-align:center;background:#000;color:var(--gold);position:sticky;top:0;z-index:100;box-shadow:0 4px 15px rgba(255,215,0,0.2);display:flex;align-items:center;justify-content:center}
-  header h1{font-size:2.2rem;text-shadow:0 0 10px var(--gold);letter-spacing:1px}
-  /* THEME BUTTON */
-  .theme-toggle{position:absolute;top:20px;right:20px;background:var(--panel);border:2px solid var(--gold);color:var(--gold);width:55px;height:55px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 12px rgba(255,215,0,0.6)}
-  .theme-toggle:hover{transform:scale(1.1)}
-  .theme-toggle .sun,.theme-toggle .moon{position:absolute;transition:0.4s}
-  body .sun{opacity:1;transform:scale(1) rotate(0deg)} body .moon{opacity:0;transform:scale(0) rotate(-180deg)}
-  body.light .sun{opacity:0;transform:scale(0) rotate(180deg)} body.light .moon{opacity:1;transform:scale(1) rotate(0deg)}
-  /* HAMBURGER */
-  #menuToggle{position:absolute;top:22px;left:20px;z-index:150;display:flex;flex-direction:column;justify-content:space-between;width:35px;height:25px;cursor:pointer}
-  #menuToggle span{height:4px;background:var(--gold);border-radius:2px;transition:0.3s}
-  #menuToggle.open span:nth-child(1){transform:rotate(45deg) translate(6px,6px)}
-  #menuToggle.open span:nth-child(2){opacity:0}
-  #menuToggle.open span:nth-child(3){transform:rotate(-45deg) translate(6px,-6px)}
-  /* SIDEBAR */
-  #sidebar{position:fixed;left:-270px;top:0;width:270px;height:100%;background:var(--panel);border-right:2px solid var(--gold);padding:60px 18px;transition:0.35s;z-index:140}
-  #sidebar.active{left:0}
-  #sidebar a, #sidebar button{display:block;width:100%;margin-bottom:14px;padding:12px 14px;border-radius:28px;text-align:center;text-decoration:none;font-weight:700;cursor:pointer;border:none}
-  #sidebar a{background:linear-gradient(45deg,var(--gold),#b8860b);color:#000}
-  #sidebar button{background:transparent;color:var(--gold);border:2px solid var(--gold)}
-  #sidebar a:hover, #sidebar button:hover{transform:scale(1.03);box-shadow:0 0 18px rgba(255,215,0,0.6)}
-  /* CONTAINER */
-  .container{padding:28px;max-width:1200px;margin:0 auto;transition:margin-left .35s}
-  .container.sidebar-active{margin-left:270px}
-  /* SEARCH */
-  .search-bar input{width:100%;padding:14px;border-radius:30px;border:none;background:var(--muted);color:var(--gold);font-size:1rem;box-shadow:0 0 10px rgba(255,215,0,0.15);outline:none}
-  .search-bar input::placeholder{color:var(--gold);opacity:.6}
-  /* SUBJECTS grid */
-  .subjects{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px;margin-top:22px}
-  .subject-card{background:#121212;border-radius:18px;padding:18px;border:1px solid rgba(255,215,0,0.06);box-shadow:0 8px 20px rgba(255,215,0,0.06);transition:transform .35s,box-shadow .35s;transform:translateY(18px);opacity:0}
-  .subject-card.show{transform:none;opacity:1}
-  .subject-card h3{color:var(--gold);margin-bottom:10px}
-  .chapters{display:none;margin-top:12px;flex-direction:column}
-  .chapter{padding:12px;border-radius:10px;background:var(--muted);margin:8px 0;cursor:pointer;color:#fff;border:1px solid rgba(0,0,0,0.2);transition:transform .22s}
-  .chapter:hover{transform:scale(1.02)}
-  /* notes viewer */
-  .notes-viewer{margin-top:20px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,215,0,0.12);background:#0b0b0b;padding:10px;min-height:420px;display:flex;align-items:center;justify-content:center}
-  .notes-viewer iframe{width:100%;height:520px;border:0;border-radius:10px}
-  .coming{color:var(--gold);font-size:18px;text-align:center;padding:28px}
-  /* ADMIN MODAL */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:200}
-  .modal{width:920px;max-width:95%;background:#0f0f0f;border:2px solid rgba(255,215,0,0.08);padding:18px;border-radius:10px;color:var(--gold)}
-  .modal h2{margin-bottom:10px}
-  .modal .row{display:flex;gap:12px;align-items:center;margin-bottom:12px}
-  .modal input, .modal select{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,215,0,0.12);background:#121212;color:var(--gold)}
-  .modal button{padding:10px 14px;border-radius:8px;border:none;background:linear-gradient(45deg,var(--gold),#b8860b);color:#000;font-weight:700;cursor:pointer}
-  .close-btn{position:absolute;right:18px;top:14px;background:transparent;border:2px solid rgba(255,215,0,0.12);color:var(--gold);padding:6px 8px;border-radius:6px;cursor:pointer}
-  .small-muted{font-size:13px;color:rgba(255,215,0,0.7)}
-  .list-box{max-height:220px;overflow:auto;padding:8px;border-radius:8px;border:1px solid rgba(255,215,0,0.06);margin-bottom:12px}
-  .list-item{padding:8px;border-radius:6px;background:#111;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
-  .list-item button{background:transparent;border:1px solid rgba(255,215,0,0.08);color:var(--gold);padding:6px 8px;border-radius:6px;cursor:pointer}
-  /* CONTACT admin floating */
-  .contact-admin{position:fixed;right:18px;bottom:18px;background:var(--gold);color:#000;padding:10px 14px;border-radius:999px;font-weight:700;text-decoration:none;box-shadow:0 8px 30px rgba(255,215,0,0.2)}
-  /* LIGHT MODE */
-  body.light{background:#f2f2f2;color:#111}
-  body.light .subject-card{background:#fff}
-  body.light .chapter{background:#f4f4f4;color:#111}
-  body.light .modal{background:#fff;color:#111}
-  /* responsive */
-  @media(max-width:720px){header{padding:18px} .modal{padding:12px} .row{flex-direction:column}}
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#0d0d0d;color:#ffd700;transition:0.35s ease;overflow-x:hidden;}
+
+/* HEADER */
+header{padding:25px;text-align:center;background:#000;color:#ffd700;position:sticky;top:0;z-index:100;box-shadow:0 4px 15px rgba(255,215,0,0.2);}
+header h1{font-size:2.2rem;text-shadow:0 0 10px #ffd700;letter-spacing:1px;}
+
+/* THEME TOGGLE */
+.theme-toggle{position:absolute;top:20px;right:20px;background:#111;border:2px solid #ffd700;color:#ffd700;width:55px;height:55px;border-radius:50%;cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;transition:0.4s ease;box-shadow:0 0 12px rgba(255,215,0,0.6);}
+.theme-toggle:hover{transform: scale(1.15);box-shadow:0 0 20px rgba(255,215,0,1);}
+.theme-toggle .sun,.theme-toggle .moon{position:absolute;transition:0.5s ease;}
+body .sun{opacity:1;transform:scale(1) rotate(0deg);}
+body .moon{opacity:0;transform:scale(0) rotate(-180deg);}
+body.light{background:#f2f2f2;color:#000;}
+body.light header{background:#fff;color:#000;}
+body.light .theme-toggle{background:#fff;border-color:#000;color:#000;}
+body.light .sun{opacity:0;transform:scale(0) rotate(180deg);}
+body.light .moon{opacity:1;transform:scale(1) rotate(0deg);}
+
+/* CONTAINER */
+.container{padding:30px;max-width:1200px;margin:auto;}
+.search-bar input{width:100%;padding:14px;margin-bottom:30px;border-radius:30px;border:none;background:#222;outline:none;color:#ffd700;font-size:1rem;box-shadow:0 0 10px rgba(255,215,0,0.3);}
+.search-bar input::placeholder{color:#ffd700aa;}
+.subjects{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:25px;}
+.subject-card{background:#111;border-radius:25px;padding:30px;text-align:center;cursor:pointer;box-shadow:0 8px 20px rgba(255,215,0,0.2);transition:0.6s ease;transform:translateY(40px);opacity:0;}
+.subject-card:hover{transform:translateY(-5px) scale(1.08);box-shadow:0 15px 30px rgba(255,215,0,0.5);}
+.subject-card h3{color:#ffd700;font-size:1.4rem;margin-bottom:12px;text-shadow:0 0 6px #ffd700;}
+.chapters{margin-top:18px;display:none;flex-direction:column;}
+.chapter{padding:14px;background:#222;margin:8px 0;border-radius:12px;cursor:pointer;transition:0.4s;opacity:0;transform:translateX(-30px);color:#ffd700;text-shadow:0 0 4px #ffd700;}
+.chapter:hover{background:#333;transform:scale(1.03);box-shadow:0 0 12px #ffd700;}
+.notes-viewer{margin-top:35px;padding:25px;border:1px solid #444;border-radius:20px;min-height:500px;box-shadow:0 8px 25px rgba(255,215,0,0.2);}
+iframe{width:100%;height:500px;border:none;border-radius:15px;}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:0;left:-400px;width:350px;height:100%;background:#111;box-shadow:5px 0 25px rgba(255,215,0,0.3);transition:0.4s ease;z-index:200;display:flex;flex-direction:column;overflow-y:auto;padding:20px;}
+.sidebar.open{left:0;}
+.sidebar h2{color:#ffd700;margin-bottom:20px;text-align:center;}
+.sidebar input,.sidebar button,.sidebar select{margin-bottom:15px;padding:10px;border-radius:10px;border:none;}
+.sidebar input,.sidebar select{width:100%;}
+.sidebar button{background:#ffd700;color:#000;font-weight:bold;cursor:pointer;transition:0.3s;}
+.sidebar button:hover{background:#e6c200;}
+.sidebar h3{margin-top:15px;color:#ffd700;}
+
+/* SIDEBAR TOGGLE BUTTON */
+.sidebar-toggle{position:fixed;top:25px;left:25px;width:45px;height:35px;cursor:pointer;z-index:210;display:flex;flex-direction:column;justify-content:space-between;}
+.sidebar-toggle div{height:5px;background:#ffd700;border-radius:5px;transition:0.4s;}
+
+/* CONTACT ADMIN BUTTON */
+.contact-admin{position:fixed;bottom:20px;right:20px;background:#ffd700;color:#000;padding:12px 20px;border-radius:50px;box-shadow:0 5px 15px rgba(255,215,0,0.5);font-weight:bold;cursor:pointer;transition:0.3s;text-decoration:none;}
+.contact-admin:hover{background:#e6c200;}
+body.light .sidebar{background:#fff;color:#000;}
+body.light .sidebar input,body.light .sidebar button,body.light .sidebar select{color:#000;}
+
+@media(max-width:600px){.subject-card{padding:20px;}.chapter{padding:12px;}.contact-admin{padding:10px 16px;bottom:15px;right:15px;}.sidebar{width:90%;}}
 </style>
 </head>
 <body>
 
 <header>
   <h1>Notes Hub</h1>
-
-  <!-- hamburger -->
-  <div id="menuToggle" aria-hidden="true">
-    <span></span><span></span><span></span>
-  </div>
-
-  <!-- theme toggle -->
-  <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
-    <span class="sun">☀️</span><span class="moon">🌙</span>
+  <button id="themeToggle" class="theme-toggle">
+      <span class="sun">☀️</span>
+      <span class="moon">🌙</span>
   </button>
 </header>
 
-<!-- sidebar -->
-<div id="sidebar">
-  <a href="mailto:sameergamer442@gmail.com?subject=Request%20for%20Notes&body=Hello%20Admin,%0AI%20need%20notes%20for:%20______">REQUEST ANY NOTES</a>
-
-  <!-- Admin access button -->
-  <button id="adminAccessBtn">ADMIN ACCESS</button>
-
-  <div style="margin-top:20px" class="small-muted"> <strong></strong></div>
+<div class="sidebar" id="sidebar">
+  <h2>Menu</h2>
+  <button id="requestBtn">Request Any Notes</button>
+  <div id="adminAccessDiv">
+    <input type="password" id="adminKey" placeholder="Admin Key">
+    <button id="adminLoginBtn">Admin Access</button>
+    <div id="adminPanel" style="display:none;">
+      <h3>Add Book</h3>
+      <input type="text" id="newBookName" placeholder="Book Name">
+      <button id="addBookBtn">Add Book</button>
+      
+      <h3>Add Chapter</h3>
+      <select id="selectBook"></select>
+      <input type="text" id="chapterName" placeholder="Chapter Name">
+      <input type="text" id="chapterLink" placeholder="Notes Link (Drive)">
+      <button id="addChapterBtn">Add Chapter</button>
+      
+      <h3>Existing Chapters</h3>
+      <div id="chapterList"></div>
+    </div>
+  </div>
 </div>
 
-<!-- main -->
-<div class="container" id="mainContainer">
-  <div class="search-bar"><input id="searchInput" placeholder="Search chapters..." /></div>
+<div class="sidebar-toggle" id="sidebarToggle">
+  <div></div><div></div><div></div>
+</div>
 
+<div class="container">
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search chapters...">
+  </div>
   <div class="subjects" id="subjectsContainer"></div>
-
   <div class="notes-viewer" id="notesViewer">
-    <div class="coming">Select a chapter to view notes here.</div>
+    <p>Select a chapter to view notes here.</p>
   </div>
 </div>
 
-<!-- contact -->
-<a class="contact-admin" href="https://www.tiktok.com/@sameer11284" target="_blank">Contact Admin</a>
-
-<!-- ADMIN MODAL (login & admin UI) -->
-<div class="modal-backdrop" id="modalWrap" role="dialog" aria-hidden="true">
-  <div class="modal" id="adminModal">
-    <button class="close-btn" id="closeModal">CLOSE</button>
-    <h2>Admin Panel</h2>
-
-    <!-- LOGIN VIEW -->
-    <div id="adminLoginView">
-      <p class="small-muted">Enter admin key to continue.</p>
-      <div class="row">
-        <input id="adminKeyInput" placeholder="Enter Admin Key" />
-        <button id="adminKeyBtn">Unlock</button>
-      </div>
-      <div id="adminLoginMsg" class="small-muted"></div>
-    </div>
-
-    <!-- DASHBOARD VIEW (hidden initially) -->
-    <div id="adminDashboard" style="display:none;margin-top:8px">
-      <p class="small-muted">You are logged in as Admin. Add books, chapters and notes links. Data is saved in your browser (localStorage).</p>
-
-      <!-- Add Book -->
-      <h3 style="margin-top:12px">1) Add Book</h3>
-      <div class="row">
-        <input id="newBookName" placeholder="Book / Subject name (e.g., Physics)" />
-        <button id="addBookBtn">Add Book</button>
-      </div>
-
-      <!-- Books list -->
-      <div style="margin-top:10px">
-        <div class="small-muted">Books</div>
-        <div class="list-box" id="booksList"></div>
-      </div>
-
-      <!-- Add Chapter -->
-      <h3 style="margin-top:8px">2) Add Chapter to Selected Book</h3>
-      <div class="row">
-        <select id="selectBookForChapter"></select>
-        <input id="newChapterName" placeholder="Chapter title (e.g., Mechanics)" />
-        <button id="addChapterBtn">Add Chapter</button>
-      </div>
-
-      <!-- Chapters list -->
-      <div style="margin-top:10px">
-        <div class="small-muted">Chapters (select a book first)</div>
-        <div class="list-box" id="chaptersList"></div>
-      </div>
-
-      <!-- Add Notes Link -->
-      <h3 style="margin-top:8px">3) Add Notes Link to Chapter</h3>
-      <div class="row">
-        <select id="selectBookForLink"></select>
-        <select id="selectChapterForLink"></select>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <input id="newLink" placeholder="Google Drive preview link (ends with /preview)" />
-        <button id="addLinkBtn">Add Link</button>
-      </div>
-
-      <!-- Save / Logout -->
-      <div style="margin-top:12px;display:flex;gap:8px">
-        <button id="logoutBtn" style="background:#333;color:var(--gold);border:2px solid rgba(255,215,0,0.12)">Logout</button>
-        <button id="clearDataBtn" style="background:transparent;border:1px solid rgba(255,215,0,0.08);color:var(--gold)">Clear All Data</button>
-      </div>
-    </div>
-  </div>
-</div>
+<a href="https://www.tiktok.com/@sameer11284" target="_blank" class="contact-admin">Contact Admin</a>
 
 <script>
-/* ---------- persistence keys ---------- */
-const STORAGE_KEY = 'notesHubData_v1';
-const ADMIN_KEY = '1128';
+let subjectsData=[]; // ZERO CHAPTERS INIT
 
-/* ---------- default data (used if localStorage empty) ---------- */
-const defaultData = [
-  {
-    name: 'Computer Science',
-    chapters: [
-      { name: 'Smart Syllabus (Chapter 1)', link: 'https://drive.google.com/file/d/1un0nVhF499geLLUByeTWwlwJOhHub_G6/preview' },
-      { name: 'Number Systems', link: '' },
-      { name: 'Digital Systems and Logic Design (Chapter 3)', link: 'https://drive.google.com/file/d/115Et_pbmmXmmqZBSRAkc9XWum47JCR48/preview' },
-      { name: 'System Troubleshooting', link: '' },
-      { name: 'Software System', link: '' },
-      { name: 'Introduction to Computer Networks', link: '' },
-      { name: 'Computational Thinking', link: '' },
-      { name: 'Web Development with HTML, CSS and JavaScript', link: '' },
-      { name: 'Data Science and Data Gathering', link: '' },
-      { name: 'Emerging Technologies in Computer Science', link: '' },
-      { name: 'Ethical, Social, and Legal Concerns', link: '' },
-      { name: 'Entrepreneurship in Digital Age', link: '' }
-    ]
-  }
-];
-
-/* ---------- load or init data ---------- */
-function loadData(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      return JSON.parse(raw);
-    }
-  }catch(e){ console.error('loadData error', e) }
-  // fallback
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
-  return JSON.parse(JSON.stringify(defaultData));
-}
-
-function saveData(data){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-/* ---------- render subjects UI ---------- */
-let subjectsData = loadData();
 const subjectsContainer = document.getElementById('subjectsContainer');
 const notesViewer = document.getElementById('notesViewer');
 
-function renderSubjects(){
-  subjectsContainer.innerHTML = '';
-  subjectsData.forEach((sub, idx) => {
-    const card = document.createElement('div');
-    card.className = 'subject-card';
-    // header
-    const h = document.createElement('h3'); h.textContent = sub.name;
-    card.appendChild(h);
-    // chapters container
-    const chaptersDiv = document.createElement('div'); chaptersDiv.className = 'chapters';
-    sub.chapters.forEach((ch, j)=>{
-      const chDiv = document.createElement('div'); chDiv.className = 'chapter';
-      chDiv.textContent = `${j+1}. ${ch.name}`;
-      chDiv.onclick = ()=>{
-        if(ch.link && ch.link.trim()!==''){
-          notesViewer.innerHTML = `<iframe src="${ch.link}"></iframe>`;
-        } else {
-          notesViewer.innerHTML = `<div class="coming">🚧 COMING SOON! <br> For help, contact admin.</div>`;
-        }
+function buildSubjects(){
+  subjectsContainer.innerHTML='';
+  subjectsData.forEach((sub,i)=>{
+    const card=document.createElement('div');card.className='subject-card';
+    card.innerHTML=`<h3>${sub.name}</h3>`;
+    const chaptersDiv=document.createElement('div');chaptersDiv.className='chapters';
+    sub.chapters.forEach((ch,j)=>{
+      const chDiv=document.createElement('div');chDiv.className='chapter';chDiv.textContent=ch.name;
+      chDiv.onclick=()=>{
+        if(ch.link){notesViewer.innerHTML=`<iframe src="${ch.link}"></iframe>`;}
+        else{notesViewer.innerHTML=`<div style="color:#ffd700;font-size:1.2rem;text-align:center;margin-top:50px;">
+            🚧 COMING SOON! <br> For help, contact admin.
+        </div>`;}
       };
       chaptersDiv.appendChild(chDiv);
+      setTimeout(()=>{chDiv.style.opacity='1';chDiv.style.transform='translateX(0)';},j*120);
     });
     card.appendChild(chaptersDiv);
-
-    // open/close chapters on card click
-    card.onclick = (e)=>{
-      // if clicked on chapter, handler above runs; prevent toggling then
-      if(e.target.classList.contains('chapter')) return;
-      const open = chaptersDiv.style.display === 'flex';
+    card.onclick=()=>{
+      const visible = chaptersDiv.style.display==='flex';
       document.querySelectorAll('.chapters').forEach(c=>c.style.display='none');
-      chaptersDiv.style.display = open ? 'none' : 'flex';
+      chaptersDiv.style.display = visible?'none':'flex';
     };
-
     subjectsContainer.appendChild(card);
-    // animate show
-    setTimeout(()=>card.classList.add('show'), idx*90);
+    setTimeout(()=>{card.style.opacity='1';card.style.transform='translateY(0)';},i*150);
   });
 }
+buildSubjects();
 
-/* ---------- initial render ---------- */
-renderSubjects();
-
-/* ---------- search filter ---------- */
-document.getElementById('searchInput').addEventListener('input', (e)=>{
-  const term = e.target.value.toLowerCase();
-  document.querySelectorAll('.subject-card').forEach(card=>{
-    const chaptersText = Array.from(card.querySelectorAll('.chapter')).map(c=>c.textContent.toLowerCase()).join(' ');
-    const title = (card.querySelector('h3')?.textContent || '').toLowerCase();
-    card.style.display = (title.includes(term) || chaptersText.includes(term)) ? 'block' : 'none';
+/* SEARCH */
+document.getElementById('searchInput').addEventListener('input',e=>{
+  const term=e.target.value.toLowerCase();
+  subjectsContainer.querySelectorAll('.subject-card').forEach(card=>{
+    const chapters=Array.from(card.querySelectorAll('.chapter')).map(c=>c.textContent.toLowerCase()).join(' ');
+    card.style.display=chapters.includes(term)?'grid':'none';
   });
 });
 
-/* ---------- THEME TOGGLE ---------- */
-const themeToggle = document.getElementById('themeToggle');
-themeToggle.addEventListener('click', ()=>{
-  document.body.classList.toggle('light');
-  localStorage.setItem('notesHub_theme', document.body.classList.contains('light') ? 'light' : 'dark');
-});
-if(localStorage.getItem('notesHub_theme') === 'light') document.body.classList.add('light');
+/* THEME */
+const toggleBtn=document.getElementById("themeToggle");
+toggleBtn.onclick=()=>{document.body.classList.toggle("light");
+localStorage.setItem("theme",document.body.classList.contains("light")?"light":"dark");};
+if(localStorage.getItem("theme")==="light"){document.body.classList.add("light");}
 
-/* ---------- SIDEBAR TOGGLE ---------- */
-const menuToggle = document.getElementById('menuToggle');
-const sidebar = document.getElementById('sidebar');
-const mainContainer = document.getElementById('mainContainer');
-menuToggle.addEventListener('click', (ev)=>{
-  ev.stopPropagation();
-  sidebar.classList.toggle('active');
-  mainContainer.classList.toggle('sidebar-active');
-  menuToggle.classList.toggle('open');
-});
-// close if click outside
-document.addEventListener('click', (e)=>{
-  if(!sidebar.contains(e.target) && !menuToggle.contains(e.target)){
-    sidebar.classList.remove('active');
-    mainContainer.classList.remove('sidebar-active');
-    menuToggle.classList.remove('open');
-  }
-});
-/* close when a sidebar link clicked */
-sidebar.querySelectorAll('a,button').forEach(el=>{
-  el.addEventListener('click', ()=>{
-    sidebar.classList.remove('active');
-    mainContainer.classList.remove('sidebar-active');
-    menuToggle.classList.remove('open');
-  });
-});
+/* SIDEBAR */
+const sidebar=document.getElementById('sidebar');
+document.getElementById('sidebarToggle').onclick=()=>{sidebar.classList.toggle('open');};
 
-/* ---------- ADMIN MODAL HANDLING ---------- */
-const modalWrap = document.getElementById('modalWrap');
-const adminAccessBtn = document.getElementById('adminAccessBtn');
-const closeModal = document.getElementById('closeModal');
-const adminLoginView = document.getElementById('adminLoginView');
-const adminDashboard = document.getElementById('adminDashboard');
-const adminKeyInput = document.getElementById('adminKeyInput');
-const adminKeyBtn = document.getElementById('adminKeyBtn');
-const adminLoginMsg = document.getElementById('adminLoginMsg');
+/* REQUEST */
+document.getElementById('requestBtn').onclick=()=>{window.open("mailto:sameergamer442@gmail.com?subject=Request%20Any%20Notes");}
 
-adminAccessBtn.addEventListener('click', ()=>{ openModal(); });
-closeModal.addEventListener('click', ()=>{ closeModalFunc(); });
+/* ADMIN */
+const adminKeyInput=document.getElementById('adminKey');
+const adminLoginBtn=document.getElementById('adminLoginBtn');
+const adminPanel=document.getElementById('adminPanel');
+const selectBook=document.getElementById('selectBook');
+const chapterList=document.getElementById('chapterList');
 
-function openModal(){
-  modalWrap.style.display = 'flex';
-  adminLoginView.style.display = 'block';
-  adminDashboard.style.display = 'none';
-  adminLoginMsg.textContent = '';
-  adminKeyInput.value = '';
-}
-function closeModalFunc(){
-  modalWrap.style.display = 'none';
+adminLoginBtn.onclick=()=>{
+  if(adminKeyInput.value==='1128'){adminPanel.style.display='block'; updateSelectBook(); displayChapters();}
+  else{alert('Invalid Admin Key');}
+};
+
+/* Add Book */
+document.getElementById('addBookBtn').onclick=()=>{
+  const name=document.getElementById('newBookName').value.trim();
+  if(name){subjectsData.push({name:name,chapters:[]}); buildSubjects(); updateSelectBook(); displayChapters();}
+};
+
+/* Add Chapter */
+document.getElementById('addChapterBtn').onclick=()=>{
+  const bookIndex=selectBook.value;
+  const chName=document.getElementById('chapterName').value.trim();
+  const chLink=document.getElementById('chapterLink').value.trim();
+  if(chName){subjectsData[bookIndex].chapters.push({name:chName,link:chLink}); buildSubjects(); displayChapters();}
+};
+
+/* Update Select */
+function updateSelectBook(){
+  selectBook.innerHTML='';
+  subjectsData.forEach((b,i)=>{selectBook.innerHTML+=`<option value="${i}">${b.name}</option>`;});
 }
 
-/* unlock admin */
-adminKeyBtn.addEventListener('click', ()=>{
-  const val = adminKeyInput.value.trim();
-  if(val === ADMIN_KEY){
-    // show dashboard
-    adminLoginView.style.display = 'none';
-    adminDashboard.style.display = 'block';
-    refreshAdminLists();
-  } else {
-    adminLoginMsg.textContent = 'Wrong key. Try again.';
-  }
-});
-
-/* ---------- ADMIN FUNCTIONS (localStorage) ---------- */
-/* UI elements */
-const newBookName = document.getElementById('newBookName');
-const addBookBtn = document.getElementById('addBookBtn');
-const booksList = document.getElementById('booksList');
-const selectBookForChapter = document.getElementById('selectBookForChapter');
-const newChapterName = document.getElementById('newChapterName');
-const addChapterBtn = document.getElementById('addChapterBtn');
-const chaptersList = document.getElementById('chaptersList');
-const selectBookForLink = document.getElementById('selectBookForLink');
-const selectChapterForLink = document.getElementById('selectChapterForLink');
-const newLink = document.getElementById('newLink');
-const addLinkBtn = document.getElementById('addLinkBtn');
-const logoutBtn = document.getElementById('logoutBtn');
-const clearDataBtn = document.getElementById('clearDataBtn');
-
-/* refresh admin panel lists */
-function refreshAdminLists(){
-  subjectsData = loadData();
-  // books dropdowns and list
-  selectBookForChapter.innerHTML = '';
-  selectBookForLink.innerHTML = '';
-  booksList.innerHTML = '';
-  subjectsData.forEach((b, idx)=>{
-    const opt = document.createElement('option'); opt.value = idx; opt.textContent = b.name;
-    selectBookForChapter.appendChild(opt);
-    const opt2 = opt.cloneNode(true); selectBookForLink.appendChild(opt2);
-
-    // books list item
-    const li = document.createElement('div'); li.className='list-item';
-    const left = document.createElement('div'); left.textContent = b.name;
-    const right = document.createElement('div');
-    const del = document.createElement('button'); del.textContent='Delete'; del.onclick = ()=>{
-      if(confirm('Delete book and all its chapters?')){ subjectsData.splice(idx,1); saveData(subjectsData); refreshAdminLists(); renderSubjects(); }
-    };
-    right.appendChild(del); li.appendChild(left); li.appendChild(right); booksList.appendChild(li);
-  });
-
-  // chapters list for selected book in selectBookForChapter
-  buildChaptersForSelectedBook();
-  buildChaptersForLinkSelect();
-}
-
-/* when book for chapter selection changes */
-selectBookForChapter.addEventListener('change', buildChaptersForSelectedBook);
-function buildChaptersForSelectedBook(){
-  const idx = selectBookForChapter.value;
-  chaptersList.innerHTML = '';
-  if(idx === '' || subjectsData.length===0) return;
-  const chs = subjectsData[idx].chapters || [];
-  chs.forEach((c, i)=>{
-    const el = document.createElement('div'); el.className='list-item';
-    const left = document.createElement('div'); left.textContent = `${i+1}. ${c.name}`;
-    const right = document.createElement('div');
-    const delBtn = document.createElement('button'); delBtn.textContent='Delete'; delBtn.onclick=()=>{
-      if(confirm('Delete this chapter?')){ subjectsData[idx].chapters.splice(i,1); saveData(subjectsData); refreshAdminLists(); renderSubjects(); }
-    };
-    right.appendChild(delBtn);
-    // show current link (if any)
-    const linkInfo = document.createElement('div'); linkInfo.style.fontSize='12px'; linkInfo.style.color='rgba(255,215,0,0.7)'; linkInfo.style.marginTop='6px';
-    linkInfo.textContent = c.link ? 'Link set' : 'No link';
-    el.appendChild(left); el.appendChild(right); el.appendChild(linkInfo);
-    chaptersList.appendChild(el);
+/* Display Chapters for Admin */
+function displayChapters(){
+  chapterList.innerHTML='';
+  subjectsData.forEach((b,bi)=>{
+    b.chapters.forEach((ch,ci)=>{
+      const div=document.createElement('div');
+      div.style.marginBottom='8px';
+      div.innerHTML=`${b.name} - ${ch.name} 
+        <button style="margin-left:5px;" onclick="editChapter(${bi},${ci})">Edit</button>
+        <button style="margin-left:5px;" onclick="deleteChapter(${bi},${ci})">Delete</button>`;
+      chapterList.appendChild(div);
+    });
   });
 }
 
-/* when book for link selection changes */
-selectBookForLink.addEventListener('change', buildChaptersForLinkSelect);
-function buildChaptersForLinkSelect(){
-  selectChapterForLink.innerHTML = '';
-  const bidx = selectBookForLink.value;
-  if(bidx==='') return;
-  const chs = subjectsData[bidx].chapters || [];
-  chs.forEach((c, i)=>{
-    const opt = document.createElement('option'); opt.value = i; opt.textContent = c.name; selectChapterForLink.appendChild(opt);
-  });
+/* Edit / Delete */
+function editChapter(bi,ci){
+  const newName=prompt("Chapter Name:",subjectsData[bi].chapters[ci].name);
+  const newLink=prompt("Notes Link:",subjectsData[bi].chapters[ci].link);
+  if(newName!==null){subjectsData[bi].chapters[ci].name=newName;}
+  if(newLink!==null){subjectsData[bi].chapters[ci].link=newLink;}
+  buildSubjects(); displayChapters();
+}
+function deleteChapter(bi,ci){
+  if(confirm("Delete this chapter?")){subjectsData[bi].chapters.splice(ci,1); buildSubjects(); displayChapters();}
 }
 
-/* add book */
-addBookBtn.addEventListener('click', ()=>{
-  const name = newBookName.value.trim();
-  if(!name){ alert('Enter book name'); return; }
-  subjectsData.push({ name, chapters: [] });
-  saveData(subjectsData); newBookName.value=''; refreshAdminLists(); renderSubjects();
-});
-
-/* add chapter */
-addChapterBtn.addEventListener('click', ()=>{
-  const bidx = selectBookForChapter.value;
-  const chName = newChapterName.value.trim();
-  if(bidx===''){ alert('Select book'); return; }
-  if(!chName){ alert('Enter chapter name'); return; }
-  subjectsData[bidx].chapters.push({ name: chName, link: '' });
-  saveData(subjectsData); newChapterName.value=''; refreshAdminLists(); renderSubjects();
-});
-
-/* add link */
-addLinkBtn.addEventListener('click', ()=>{
-  const bidx = selectBookForLink.value;
-  const cidx = selectChapterForLink.value;
-  const link = newLink.value.trim();
-  if(bidx===''||cidx===''){ alert('Select book and chapter'); return; }
-  if(!link){ alert('Enter link (use Drive preview link)'); return; }
-  subjectsData[bidx].chapters[cidx].link = link;
-  saveData(subjectsData); newLink.value=''; refreshAdminLists(); renderSubjects();
-});
-
-/* logout */
-logoutBtn.addEventListener('click', ()=>{
-  adminDashboard.style.display='none'; adminLoginView.style.display='block'; adminKeyInput.value=''; adminLoginMsg.textContent='Logged out';
-});
-
-/* clear data */
-clearDataBtn.addEventListener('click', ()=>{
-  if(confirm('Clear all saved notes data from this browser?')){ localStorage.removeItem(STORAGE_KEY); subjectsData = loadData(); refreshAdminLists(); renderSubjects(); alert('Cleared'); }
-});
-
-/* initialize admin lists when modal opens quickly if data exists */
-document.addEventListener('DOMContentLoaded', ()=>{ /* nothing - data loaded above */ });
-
-/* open admin modal via keyboard (optional) - Ctrl+Shift+A */
-document.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='a') openModal(); });
-
-/* utility: expose save/load on window for debug if needed */
-window._nh = { loadData, saveData, subjectsData };
+updateSelectBook();
+displayChapters();
 </script>
 </body>
 </html>
