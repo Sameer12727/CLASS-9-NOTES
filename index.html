@@ -28,7 +28,7 @@ body.light .moon{opacity:1;transform:scale(1) rotate(0deg);}
 .subject-card:hover{transform:translateY(-5px) scale(1.08);box-shadow:0 15px 30px rgba(255,215,0,0.5);}
 .subject-card h3{color:#ffd700;font-size:1.4rem;margin-bottom:12px;text-shadow:0 0 6px #ffd700;}
 .chapters{margin-top:18px;display:none;flex-direction:column;}
-.chapter{padding:14px;background:#222;margin:8px 0;border-radius:12px;cursor:pointer;transition:0.4s;opacity:0;transform:translateX(-30px);color:#ffd700;text-shadow:0 0 4px #ffd700;}
+.chapter{padding:14px;background:#222;margin:8px 0;border-radius:12px;cursor:pointer;transition:0.4s;opacity:0;transform:translateX(-30px);color:#ffd700;text-shadow:0 0 4px #ffd700;display:flex;justify-content:space-between;align-items:center;}
 .chapter:hover{background:#333;transform:scale(1.03);box-shadow:0 0 12px #ffd700;}
 .notes-viewer{margin-top:35px;padding:25px;border:1px solid #444;border-radius:20px;min-height:500px;box-shadow:0 8px 25px rgba(255,215,0,0.2);}
 iframe{width:100%;height:500px;border:none;border-radius:15px;}
@@ -51,6 +51,7 @@ body.light .sidebar input,body.light .sidebar button,body.light .sidebar select{
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 </head>
 <body>
 
@@ -103,13 +104,24 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-// ====== VARIABLES ======
-let subjectsData=[];
-let subjectsDataCache={};
+let subjectsData=[]; let subjectsDataCache={};
 const subjectsContainer=document.getElementById('subjectsContainer');
 const notesViewer=document.getElementById('notesViewer');
 
-// ====== BUILD SUBJECTS ======
+// ===== FIREBASE LISTENER =====
+db.ref('subjects').on('value',snapshot=>{
+  subjectsDataCache = snapshot.val() || {};
+  subjectsData = [];
+  Object.keys(subjectsDataCache).forEach(bookKey=>{
+    const book = subjectsDataCache[bookKey];
+    const chapters = [];
+    if(book.chapters){Object.keys(book.chapters).forEach(chKey=>{chapters.push({key:chKey,...book.chapters[chKey]});});}
+    subjectsData.push({key:bookKey,name:book.name,chapters:chapters});
+  });
+  buildSubjects(); updateSelectBook(); displayChapters();
+});
+
+// ===== BUILD SUBJECTS =====
 function buildSubjects(){
   subjectsContainer.innerHTML='';
   subjectsData.forEach((sub,i)=>{
@@ -117,8 +129,10 @@ function buildSubjects(){
     card.innerHTML=`<h3>${sub.name}</h3>`;
     const chaptersDiv=document.createElement('div');chaptersDiv.className='chapters';
     sub.chapters.forEach((ch,j)=>{
-      const chDiv=document.createElement('div');chDiv.className='chapter';chDiv.textContent=ch.name;
-      chDiv.onclick=()=>{notesViewer.innerHTML = ch.link ? `<iframe src="${ch.link}"></iframe>` : `<div style="color:#ffd700;font-size:1.2rem;text-align:center;margin-top:50px;">🚧 COMING SOON! <br> For help, contact admin.</div>`;};
+      const chDiv=document.createElement('div');chDiv.className='chapter';
+      const span=document.createElement('span'); span.textContent=ch.name;
+      chDiv.appendChild(span);
+      chDiv.onclick=()=>{notesViewer.innerHTML=ch.link?`<iframe src="${ch.link}"></iframe>`:`<div style="color:#ffd700;font-size:1.2rem;text-align:center;margin-top:50px;">🚧 COMING SOON!<br>Contact admin.</div>`;};
       chaptersDiv.appendChild(chDiv);
       setTimeout(()=>{chDiv.style.opacity='1';chDiv.style.transform='translateX(0)';},j*120);
     });
@@ -129,41 +143,26 @@ function buildSubjects(){
   });
 }
 
-// ====== FIREBASE LISTENER ======
-db.ref('subjects').on('value', snapshot => {
-  subjectsDataCache = snapshot.val() || {};
-  subjectsData = [];
-  Object.keys(subjectsDataCache).forEach(key=>{
-    const book = subjectsDataCache[key];
-    const chapters=[];
-    if(book.chapters){Object.keys(book.chapters).forEach(k=>{chapters.push(book.chapters[k]);});}
-    subjectsData.push({name:book.name,chapters:chapters});
-  });
-  buildSubjects(); updateSelectBook(); displayChapters();
-});
-
-// ====== SEARCH ======
+// ===== SEARCH =====
 document.getElementById('searchInput').addEventListener('input',e=>{
   const term=e.target.value.toLowerCase();
   subjectsContainer.querySelectorAll('.subject-card').forEach(card=>{
-    const chapters=Array.from(card.querySelectorAll('.chapter')).map(c=>c.textContent.toLowerCase()).join(' ');
+    const chapters=Array.from(card.querySelectorAll('.chapter span')).map(c=>c.textContent.toLowerCase()).join(' ');
     card.style.display=chapters.includes(term)?'grid':'none';
   });
 });
 
-// ====== THEME ======
+// ===== THEME =====
 const toggleBtn=document.getElementById("themeToggle");
 toggleBtn.onclick=()=>{document.body.classList.toggle("light");localStorage.setItem("theme",document.body.classList.contains("light")?"light":"dark");};
 if(localStorage.getItem("theme")==="light"){document.body.classList.add("light");}
 
-// ====== SIDEBAR ======
+// ===== SIDEBAR =====
 const sidebar=document.getElementById('sidebar');
 document.getElementById('sidebarToggle').onclick=()=>{sidebar.classList.toggle('open');};
-
-// ====== REQUEST NOTES ======
 document.getElementById('requestBtn').onclick=()=>{window.open("mailto:sameergamer442@gmail.com?subject=Request%20Any%20Notes");}
 
-// ====== ADMIN ======
+// ===== ADMIN =====
 const adminKeyInput=document.getElementById('adminKey');
 const adminLoginBtn=document.getElementById('adminLoginBtn');
 const adminPanel=document.getElementById('adminPanel');
@@ -172,72 +171,58 @@ const chapterList=document.getElementById('chapterList');
 
 adminLoginBtn.onclick=()=>{if(adminKeyInput.value==='1128'){adminPanel.style.display='block';updateSelectBook();displayChapters();}else{alert('Invalid Admin Key');}};
 
-// ADD BOOK
 document.getElementById('addBookBtn').onclick=()=>{
   const name=document.getElementById('newBookName').value.trim();
-  if(name){const newBookRef=db.ref('subjects').push();newBookRef.set({name:name});document.getElementById('newBookName').value='';}
+  if(name){db.ref('subjects').push({name:name});document.getElementById('newBookName').value='';}
 };
 
-// ADD CHAPTER
 document.getElementById('addChapterBtn').onclick=()=>{
   const bookIndex=selectBook.value;
   const chName=document.getElementById('chapterName').value.trim();
   const chLink=document.getElementById('chapterLink').value.trim();
   if(chName && subjectsData[bookIndex]){
-    const bookId=Object.keys(subjectsDataCache)[bookIndex];
-    const newChRef=db.ref(`subjects/${bookId}/chapters`).push();
-    newChRef.set({name:chName,link:chLink});
+    const bookId=subjectsData[bookIndex].key;
+    db.ref(`subjects/${bookId}/chapters`).push({name:chName,link:chLink});
     document.getElementById('chapterName').value='';
     document.getElementById('chapterLink').value='';
   }
 };
 
-// ====== UPDATE SELECT BOOK ======
+// ===== UPDATE SELECT BOOK =====
 function updateSelectBook(){
   selectBook.innerHTML='';
   subjectsData.forEach((b,i)=>{selectBook.innerHTML+=`<option value="${i}">${b.name}</option>`;});
 }
 
-// ====== DISPLAY ADMIN CHAPTERS ======
+// ===== DISPLAY ADMIN CHAPTERS =====
 function displayChapters(){
   chapterList.innerHTML='';
   subjectsData.forEach((b,bi)=>{
     b.chapters.forEach((ch,ci)=>{
       const div=document.createElement('div');div.style.marginBottom='8px';
       div.innerHTML=`${b.name} - ${ch.name} 
-        <button style="margin-left:5px;" onclick="editChapter(${bi},${ci})">Edit</button>
-        <button style="margin-left:5px;" onclick="deleteChapter(${bi},${ci})">Delete</button>`;
+        <button style="margin-left:5px;" onclick="editChapter('${b.key}','${ch.key}')">Edit</button>
+        <button style="margin-left:5px;" onclick="deleteChapter('${b.key}','${ch.key}')">Delete</button>`;
       chapterList.appendChild(div);
     });
   });
 }
 
-// ====== EDIT / DELETE ======
-function editChapter(bi,ci){
-  const newName=prompt("Chapter Name:",subjectsData[bi].chapters[ci].name);
-  const newLink=prompt("Notes Link:",subjectsData[bi].chapters[ci].link);
-  if(newName!==null){subjectsData[bi].chapters[ci].name=newName;}
-  if(newLink!==null){subjectsData[bi].chapters[ci].link=newLink;}
-  const bookId=Object.keys(subjectsDataCache)[bi];
-  const chKeys=Object.keys(subjectsDataCache[bookId].chapters||{});
-  db.ref(`subjects/${bookId}/chapters/${chKeys[ci]}`).set({name:newName,link:newLink});
+// ===== EDIT / DELETE =====
+function editChapter(bookKey,chKey){
+  const chRef=db.ref(`subjects/${bookKey}/chapters/${chKey}`);
+  chRef.once('value').then(snap=>{
+    const ch=snap.val();
+    const newName=prompt("Chapter Name:",ch.name);
+    const newLink=prompt("Notes Link:",ch.link);
+    if(newName!==null && newLink!==null){chRef.set({name:newName,link:newLink});}
+  });
 }
 
-function deleteChapter(bi,ci){
-  if(confirm("Delete this chapter?")){
-    const bookId=Object.keys(subjectsDataCache)[bi];
-    const chKeys=Object.keys(subjectsDataCache[bookId].chapters||{});
-    db.ref(`subjects/${bookId}/chapters/${chKeys[ci]}`).remove();
-  }
+function deleteChapter(bookKey,chKey){
+  if(confirm("Delete this chapter?")){db.ref(`subjects/${bookKey}/chapters/${chKey}`).remove();}
 }
 
-function deleteBook(bi){
-  if(confirm("Delete this book?")){
-    const bookId=Object.keys(subjectsDataCache)[bi];
-    db.ref(`subjects/${bookId}`).remove();
-  }
-}
 </script>
-
 </body>
 </html>
