@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TikTok Downloader | No Watermark | SAMEER</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Download TikTok videos directly without watermark.">
+<meta name="author" content="SAMEER">
+
+<!-- Google Fonts & Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* --- STYLING (Glassmorphism & Animations) --- */
+:root {
+    --bg-gradient: linear-gradient(45deg, #FF0050, #00F2EA, #000000);
+    --card-bg: rgba(255, 255, 255, 0.1);
+    --card-border: rgba(255, 255, 255, 0.2);
+    --text: #ffffff;
+    --text-sub: #e2e8f0;
+    --input-bg: rgba(0, 0, 0, 0.3);
+    --btn-grad: linear-gradient(90deg, #FF0050, #00F2EA);
+}
+
+body.light {
+    --bg-gradient: linear-gradient(45deg, #a8edea, #fed6e3);
+    --card-bg: rgba(255, 255, 255, 0.65);
+    --card-border: rgba(255, 255, 255, 0.8);
+    --text: #1e293b;
+    --text-sub: #475569;
+    --input-bg: rgba(255, 255, 255, 0.7);
+    --btn-grad: linear-gradient(90deg, #FF0050, #00F2EA);
+}
+
+* { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+body {
+    margin: 0; min-height: 100vh;
+    background: var(--bg-gradient);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    display: flex; justify-content: center; align-items: center;
+    padding: 20px; color: var(--text);
+    overflow-x: hidden;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* CARD */
+.card {
+    width: 100%; max-width: 480px;
+    background: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    position: relative;
+    transition: 0.3s;
+}
+
+/* HEADER */
+.header { text-align: center; margin-bottom: 25px; }
+.header h1 { 
+    margin: 0; font-size: 28px; font-weight: 700; 
+    background: var(--btn-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 10px rgba(0,242,234,0.3));
+}
+.header p { margin: 8px 0 0; color: var(--text-sub); font-size: 14px; }
+
+/* TOGGLE */
+.theme-btn {
+    position: absolute; top: 20px; right: 20px;
+    background: none; border: none; font-size: 20px;
+    cursor: pointer; color: var(--text);
+    transition: 0.3s;
+}
+.theme-btn:hover { transform: rotate(20deg) scale(1.1); }
+
+/* INPUT */
+.input-group { position: relative; width: 100%; }
+.input-group i {
+    position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+    color: var(--text-sub);
+}
+input {
+    width: 100%; padding: 16px 16px 16px 45px;
+    border-radius: 15px; border: 2px solid transparent;
+    background: var(--input-bg); color: var(--text);
+    font-size: 14px; outline: none; transition: 0.3s;
+}
+input:focus { border-color: #00F2EA; box-shadow: 0 0 15px rgba(0, 242, 234, 0.2); }
+input::placeholder { color: var(--text-sub); opacity: 0.7; }
+
+/* PASTE BTN */
+.paste-btn {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.1); border: none; color: var(--text);
+    padding: 5px 10px; border-radius: 8px; font-size: 11px; cursor: pointer;
+}
+.paste-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* MAIN BUTTON */
+.btn-main {
+    width: 100%; margin-top: 20px; padding: 15px;
+    border: none; border-radius: 15px;
+    background: var(--btn-grad);
+    color: #fff; font-size: 16px; font-weight: 600;
+    cursor: pointer; position: relative;
+    transition: 0.3s; box-shadow: 0 10px 20px rgba(255, 0, 80, 0.3);
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+}
+.btn-main:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(0, 242, 234, 0.4); }
+.btn-main:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* SPINNER */
+.spinner {
+    width: 20px; height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%; border-top-color: #fff;
+    animation: spin 1s infinite linear;
+    display: none;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* RESULT AREA */
+.result-container {
+    display: none; margin-top: 25px;
+    background: rgba(0,0,0,0.2); border-radius: 15px; padding: 15px;
+    animation: slideUp 0.5s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+video { width: 100%; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
+
+.download-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.dl-btn {
+    padding: 12px; border-radius: 10px; text-align: center;
+    font-weight: 600; font-size: 13px; cursor: pointer; border: none;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: 0.3s; position: relative; overflow: hidden;
+}
+
+/* MP4 Button */
+.dl-video { background: #fff; color: #000; }
+.dl-video:hover { background: #f1f5f9; }
+
+/* MP3 Button */
+.dl-audio { background: rgba(255,255,255,0.15); color: var(--text); border: 1px solid rgba(255,255,255,0.2); }
+.dl-audio:hover { background: rgba(255,255,255,0.25); }
+
+/* Button Loading State */
+.dl-btn.loading { pointer-events: none; opacity: 0.8; }
+.dl-btn.loading::after {
+    content: ""; position: absolute; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.1); left: 0; top: 0;
+}
+
+/* STATUS TEXT */
+.status-text {
+    text-align: center; font-size: 12px; margin-top: 10px;
+    color: #00F2EA; min-height: 18px;
+}
+
+/* ERROR */
+.error-msg {
+    color: #ff4757; text-align: center; margin-top: 15px; font-size: 13px;
+    display: none; animation: shake 0.4s ease;
+}
+@keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+
+footer { margin-top: 30px; text-align: center; font-size: 11px; color: var(--text-sub); opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <button class="theme-btn" onclick="toggleTheme()"><i class="fas fa-moon"></i></button>
+    
+    <div class="header">
+        <h1>TikTok <span style="font-weight:300">Downloader</span></h1>
+        <p>No Watermark • Direct Save • Fast</p>
+    </div>
+
+    <div class="input-group">
+        <i class="fas fa-link"></i>
+        <input type="text" id="urlInput" placeholder="Paste TikTok Link here...">
+        <button class="paste-btn" onclick="pasteFromClipboard()">Paste</button>
+    </div>
+
+    <button class="btn-main" id="fetchBtn">
+        <span class="btn-text">Find Video</span>
+        <div class="spinner"></div>
+    </button>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- RESULT SECTION -->
+    <div class="result-container" id="resultArea">
+        <video id="videoPlayer" controls></video>
+        
+        <div class="download-options">
+            <button class="dl-btn dl-video" id="dlVideoBtn" onclick="downloadMedia('video')">
+                <i class="fas fa-video"></i> Download MP4
+            </button>
+            <button class="dl-btn dl-audio" id="dlAudioBtn" onclick="downloadMedia('audio')">
+                <i class="fas fa-music"></i> Download MP3
+            </button>
+        </div>
+        <div class="status-text" id="statusText"></div>
+    </div>
+
+    <footer>
+        Created with ❤️ by <b>SAMEER</b>
+    </footer>
+</div>
+
+<script>
+/* --- LOGIC --- */
+const fetchBtn = document.getElementById('fetchBtn');
+const urlInput = document.getElementById('urlInput');
+const errorMsg = document.getElementById('errorMsg');
+const resultArea = document.getElementById('resultArea');
+const videoPlayer = document.getElementById('videoPlayer');
+const btnText = document.querySelector('.btn-text');
+const spinner = document.querySelector('.spinner');
+const statusText = document.getElementById('statusText');
+
+// Store URLs globally
+let mediaData = { video: "", audio: "", id: "" };
+
+/* 1. PASTE FROM CLIPBOARD */
+async function pasteFromClipboard() {
+    try {
+        const text = await navigator.clipboard.readText();
+        urlInput.value = text;
+    } catch (err) {
+        alert("Permission denied. Please paste manually.");
+    }
+}
+
+/* 2. FETCH VIDEO DETAILS */
+fetchBtn.addEventListener('click', async () => {
+    const url = urlInput.value.trim();
+    
+    errorMsg.style.display = 'none';
+    resultArea.style.display = 'none';
+    statusText.textContent = '';
+    
+    if (!url || !url.includes('tiktok.com')) {
+        showError("Please enter a valid TikTok URL.");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        // Fetch from API
+        const apiUrl = `https://tikwm.com/api/?url=${encodeURIComponent(url)}`;
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (data.code === 0) {
+            // Save Data
+            mediaData.video = data.data.play;
+            mediaData.audio = data.data.music;
+            mediaData.id = data.data.id;
+            
+            // Setup Player
+            videoPlayer.src = mediaData.video;
+            resultArea.style.display = 'block';
+        } else {
+            throw new Error("Video is private or deleted.");
+        }
+
+    } catch (error) {
+        showError("Error fetching video. Please check the link.");
+    } finally {
+        setLoading(false);
+    }
+});
+
+/* 3. DIRECT DOWNLOAD FUNCTION (The Fix) */
+async function downloadMedia(type) {
+    const btn = type === 'video' ? document.getElementById('dlVideoBtn') : document.getElementById('dlAudioBtn');
+    const originalText = btn.innerHTML;
+    const url = type === 'video' ? mediaData.video : mediaData.audio;
+    const filename = `tiktok_${mediaData.id}.${type === 'video' ? 'mp4' : 'mp3'}`;
+
+    // Update Button UI
+    btn.innerHTML = `<div class="spinner" style="display:block; width:15px; height:15px; border-width:2px;"></div> Saving...`;
+    btn.classList.add('loading');
+    statusText.textContent = "Fetching file... Please do not close tab.";
+
+    try {
+        // Step A: Fetch the file as a Blob (Binary Large Object)
+        const response = await fetch(url);
+        if(!response.ok) throw new Error("Network error");
+        
+        const blob = await response.blob();
+        
+        // Step B: Create a temporary URL for that blob
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        // Step C: Force Browser to Download
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Step D: Cleanup
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+        
+        statusText.textContent = "Download Started! ✅";
+
+    } catch (err) {
+        console.error(err);
+        statusText.textContent = "Direct download failed. Opening in new tab...";
+        // Fallback: If Direct fetch fails (CORS), open in new tab
+        window.open(url, '_blank');
+    } finally {
+        // Reset Button
+        btn.innerHTML = originalText;
+        btn.classList.remove('loading');
+        setTimeout(() => { statusText.textContent = ""; }, 4000);
+    }
+}
+
+/* UTILS */
+function setLoading(isLoading) {
+    if (isLoading) {
+        fetchBtn.disabled = true;
+        btnText.style.display = 'none';
+        spinner.style.display = 'block';
+    } else {
+        fetchBtn.disabled = false;
+        btnText.style.display = 'block';
+        spinner.style.display = 'none';
+    }
+}
+
+function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('light');
+    const icon = document.querySelector('.theme-btn i');
+    icon.className = document.body.classList.contains('light') ? 'fas fa-sun' : 'fas fa-moon';
+}
+</script>
+
+</body>
+</html>
